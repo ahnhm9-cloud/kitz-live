@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>KITZ 실시간 현황</title>
+<style>
+:root{--bg:#f6f7f9;--card:#fff;--text:#1a1d21;--muted:#6b7280;--line:#e5e7eb;--accent:#e11d48;--up:#059669;--down:#dc2626}
+@media (prefers-color-scheme:dark){:root{--bg:#0f1115;--card:#181b21;--text:#e8eaed;--muted:#9aa0a6;--line:#2a2e36;--accent:#fb7185;--up:#34d399;--down:#f87171}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 "Pretendard","Malgun Gothic",system-ui,sans-serif}
+main{max-width:1100px;margin:0 auto;padding:24px 16px 48px}
+header{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:8px;margin-bottom:20px}
+h1{font-size:22px;margin:0}
+.meta{color:var(--muted);font-size:13px}
+.meta b{color:var(--text)}
+.stale{color:var(--down);font-weight:600}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:28px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+.card .label{color:var(--muted);font-size:13px}
+.card .value{font-size:28px;font-weight:700;font-variant-numeric:tabular-nums;margin-top:2px}
+.card .diff{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.diff .up{color:var(--up)} .diff .down{color:var(--down)}
+h2{font-size:16px;margin:0 0 10px}
+.table-wrap{overflow-x:auto;background:var(--card);border:1px solid var(--line);border-radius:12px;margin-bottom:28px}
+table{border-collapse:collapse;width:100%;min-width:640px;font-variant-numeric:tabular-nums}
+th,td{padding:10px 12px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
+th{font-size:12px;color:var(--muted);font-weight:600}
+th:first-child,td:first-child{text-align:left}
+tr:last-child td{border-bottom:0}
+tr.today td{font-weight:700}
+.note{color:var(--muted);font-size:12px}
+</style>
+</head>
+<body>
+<main>
+  <noscript>이 페이지는 자바스크립트가 필요합니다.</noscript>
+  <header>
+    <h1>KITZ 실시간 현황</h1>
+    <div class="meta">데이터 기준 <b id="updated">-</b> · 5분마다 자동 갱신</div>
+  </header>
+  <section class="cards" id="cards"></section>
+  <h2>최근 7일</h2>
+  <div class="table-wrap"><table id="daily"></table></div>
+  <h2>오늘 채널별</h2>
+  <div class="table-wrap"><table id="channel"></table></div>
+  <p class="note">출처: 에어브릿지 KITZ 앱 액츄얼스 리포트(Event Date 기준, KST). 오늘 수치는 진행 중이며 어제 대비는 어제 하루 전체와 비교합니다. 매출 통화는 에어브릿지 앱 설정 통화 기준입니다.</p>
+</main>
+<script>
+const COLS=[
+  ['app_installs','설치'],['app_open_users','접속 유저'],['app_paying_users','결제 유저'],
+  ['app_total_revenue','매출'],['app_custom_episode_play','에피소드 재생'],
+  ['app_custom_users_episode_play','재생 유저'],['app_custom_episode_complete','에피소드 완료']];
+const fmt=v=>Math.round(v||0).toLocaleString('ko-KR');
+function render(d){
+  const upd=document.getElementById('updated');
+  upd.textContent=d.updatedAt;
+  const age=(Date.now()-new Date(d.updatedAt.replace(' ','T')+':00+09:00'))/60000;
+  upd.className=age>20?'stale':'';
+  if(age>20) upd.textContent+=' (수집 지연)';
+  const t=d.daily.find(r=>r.key===d.today)||{}, y=d.daily.find(r=>r.key<d.today)||{};
+  document.getElementById('cards').innerHTML=COLS.map(([k,n])=>{
+    const diff=(t[k]||0)-(y[k]||0), cls=diff>=0?'up':'down';
+    return `<div class="card"><div class="label">오늘 ${n}</div><div class="value">${fmt(t[k])}</div>
+      <div class="diff">어제 ${fmt(y[k])} · <span class="${cls}">${diff>=0?'+':''}${fmt(diff)}</span></div></div>`}).join('');
+  const head=first=>`<tr><th>${first}</th>${COLS.map(c=>`<th>${c[1]}</th>`).join('')}</tr>`;
+  document.getElementById('daily').innerHTML=head('날짜')+d.daily.map(r=>
+    `<tr class="${r.key===d.today?'today':''}"><td>${r.key}${r.key===d.today?' (오늘)':''}</td>${COLS.map(c=>`<td>${fmt(r[c[0]])}</td>`).join('')}</tr>`).join('');
+  document.getElementById('channel').innerHTML=head('채널')+(d.channel.length?d.channel.map(r=>
+    `<tr><td>${r.key}</td>${COLS.map(c=>`<td>${fmt(r[c[0]])}</td>`).join('')}</tr>`).join(''):'<tr><td colspan="8">데이터 없음</td></tr>');
+}
+const DATA_URL='https://raw.githubusercontent.com/ahnhm9-cloud/kitz-live/data/data.json';
+function load(){
+  fetch(DATA_URL+'?t='+Date.now(),{cache:'no-store'})
+    .then(r=>{if(!r.ok)throw new Error(r.status);return r.json()})
+    .then(render)
+    .catch(()=>{document.getElementById('updated').textContent='데이터를 불러오지 못함'});
+}
+load();
+setInterval(load,5*60*1000);
+</script>
+</body>
+</html>
