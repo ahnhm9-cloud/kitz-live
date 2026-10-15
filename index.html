@@ -71,7 +71,7 @@ function render(d){
   document.getElementById('daily').innerHTML=head('날짜')+d.daily.map(r=>
     `<tr class="${r.key===d.today?'today':''}"><td>${r.key}${r.key===d.today?' (오늘)':''}</td>${COLS.map(c=>`<td>${cell(r,c[0],r.key===d.today)}</td>`).join('')}</tr>`).join('');
   document.getElementById('channel').innerHTML=head('채널')+(d.channel.length?d.channel.map(r=>
-    `<tr><td>${r.key}</td>${COLS.map(c=>`<td>${fmt(r[c[0]])}</td>`).join('')}</tr>`).join(''):'<tr><td colspan="8">데이터 없음</td></tr>');
+    `<tr><td>${r.key}</td>${COLS.map(c=>`<td>${cell(r,c[0],true)}</td>`).join('')}</tr>`).join(''):'<tr><td colspan="8">데이터 없음</td></tr>');
 }
 const API_URL='https://api.github.com/repos/ahnhm9-cloud/kitz-live/contents/data.json?ref=data';
 const RAW_URL='https://raw.githubusercontent.com/ahnhm9-cloud/kitz-live/data/data.json';
