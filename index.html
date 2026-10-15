@@ -37,14 +37,14 @@ tr.today td{font-weight:700}
   <noscript>이 페이지는 자바스크립트가 필요합니다.</noscript>
   <header>
     <h1>KITZ 실시간 현황</h1>
-    <div class="meta">데이터 기준 <b id="updated">-</b> · 5분마다 자동 갱신</div>
+    <div class="meta">마지막 확인 <b id="updated">-</b> · 5분마다 확인</div>
   </header>
   <section class="cards" id="cards"></section>
   <h2>최근 7일</h2>
   <div class="table-wrap"><table id="daily"></table></div>
   <h2>오늘 채널별</h2>
   <div class="table-wrap"><table id="channel"></table></div>
-  <p class="note">출처: 에어브릿지 KITZ 앱 액츄얼스 리포트(Event Date 기준, KST). 오늘 수치는 진행 중이며 어제 대비는 어제 하루 전체와 비교합니다. 매출 통화는 에어브릿지 앱 설정 통화 기준입니다.</p>
+  <p class="note">출처: 에어브릿지 KITZ 앱 액츄얼스 리포트(Event Date 기준, KST). 오늘 수치는 진행 중이며 어제 대비는 어제 하루 전체와 비교합니다. 매출 통화는 에어브릿지 앱 설정 통화 기준입니다. 5분마다 에어브릿지를 확인하지만, 에어브릿지가 집계를 일정 간격으로 반영하기 때문에 숫자는 그보다 드물게 바뀝니다.</p>
 </main>
 <script>
 const COLS=[
