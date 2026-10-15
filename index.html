@@ -37,7 +37,7 @@ tr.today td{font-weight:700}
   <noscript>이 페이지는 자바스크립트가 필요합니다.</noscript>
   <header>
     <h1>KITZ 실시간 현황</h1>
-    <div class="meta">마지막 확인 <b id="updated">-</b> · 5분마다 확인</div>
+    <div class="meta">마지막 확인 <b id="updated">-</b> · 5분마다 자동 갱신</div>
   </header>
   <section class="cards" id="cards"></section>
   <h2>최근 7일</h2>
@@ -79,8 +79,17 @@ function load(){
     .then(render)
     .catch(()=>{document.getElementById('updated').textContent='데이터를 불러오지 못함'});
 }
+// 수집기는 매 x2·x7분에 올린다 → 그 40초 뒤에 맞춰 읽는다
+function nextDelay(){
+  const now=new Date(), t=new Date(now);
+  t.setSeconds(40,0);
+  while(t<=now || (t.getMinutes()%5)!==2) t.setMinutes(t.getMinutes()+1,40,0);
+  return t-now;
+}
+function schedule(){setTimeout(()=>{load();schedule()},nextDelay())}
 load();
-setInterval(load,5*60*1000);
+schedule();
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')load()});
 </script>
 </body>
 </html>
