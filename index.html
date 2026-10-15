@@ -69,10 +69,13 @@ function render(d){
   document.getElementById('channel').innerHTML=head('채널')+(d.channel.length?d.channel.map(r=>
     `<tr><td>${r.key}</td>${COLS.map(c=>`<td>${fmt(r[c[0]])}</td>`).join('')}</tr>`).join(''):'<tr><td colspan="8">데이터 없음</td></tr>');
 }
-const DATA_URL='https://raw.githubusercontent.com/ahnhm9-cloud/kitz-live/data/data.json';
+const API_URL='https://api.github.com/repos/ahnhm9-cloud/kitz-live/contents/data.json?ref=data';
+const RAW_URL='https://raw.githubusercontent.com/ahnhm9-cloud/kitz-live/data/data.json';
+function getJSON(url,opts){return fetch(url,opts).then(r=>{if(!r.ok)throw new Error(r.status);return r.json()})}
 function load(){
-  fetch(DATA_URL+'?t='+Date.now(),{cache:'no-store'})
-    .then(r=>{if(!r.ok)throw new Error(r.status);return r.json()})
+  // GitHub API는 캐시 없이 최신본을 준다. 호출 한도(IP당 시간 60회)를 넘으면 raw(최대 5분 지연)로 대체
+  getJSON(API_URL+'&t='+Date.now(),{cache:'no-store',headers:{Accept:'application/vnd.github.raw'}})
+    .catch(()=>getJSON(RAW_URL+'?t='+Date.now(),{cache:'no-store'}))
     .then(render)
     .catch(()=>{document.getElementById('updated').textContent='데이터를 불러오지 못함'});
 }
