@@ -30,6 +30,7 @@ th:first-child,td:first-child{text-align:left}
 tr:last-child td{border-bottom:0}
 tr.today td{font-weight:700}
 .note{color:var(--muted);font-size:12px}
+.lag{color:var(--muted);font-size:13px;font-weight:500}
 </style>
 </head>
 <body>
@@ -44,7 +45,7 @@ tr.today td{font-weight:700}
   <div class="table-wrap"><table id="daily"></table></div>
   <h2>오늘 채널별</h2>
   <div class="table-wrap"><table id="channel"></table></div>
-  <p class="note">출처: 에어브릿지 KITZ 앱 액츄얼스 리포트(Event Date 기준, KST). 오늘 수치는 진행 중이며 어제 대비는 어제 하루 전체와 비교합니다. 매출 통화는 에어브릿지 앱 설정 통화 기준입니다. 5분마다 에어브릿지를 확인하지만, 에어브릿지가 집계를 일정 간격으로 반영하기 때문에 숫자는 그보다 드물게 바뀝니다.</p>
+  <p class="note">출처: 에어브릿지 KITZ 앱 액츄얼스 리포트(Event Date 기준, KST). 오늘 수치는 진행 중이며 어제 대비는 어제 하루 전체와 비교합니다. 매출 통화는 에어브릿지 앱 설정 통화 기준입니다. 5분마다 에어브릿지를 확인하지만, 에어브릿지가 집계를 일정 간격으로 반영하기 때문에 숫자는 그보다 드물게 바뀝니다. 접속·결제·재생 유저 수는 에어브릿지가 시간 단위로 뒤늦게 집계해 자정 직후 등에는 '집계 중'으로 표시됩니다.</p>
 </main>
 <script>
 const COLS=[
@@ -52,6 +53,9 @@ const COLS=[
   ['app_total_revenue','매출'],['app_custom_episode_play','에피소드 재생'],
   ['app_custom_users_episode_play','재생 유저'],['app_custom_episode_complete','에피소드 완료']];
 const fmt=v=>Math.round(v||0).toLocaleString('ko-KR');
+// 유저 수 지표는 에어브릿지가 시간 단위로 뒤늦게 집계한다 → 오늘 값이 아직 0이면 '집계 중'으로 표시
+const LAGGED=['app_open_users','app_paying_users','app_custom_users_episode_play'];
+const cell=(row,k,isToday)=>(isToday&&LAGGED.includes(k)&&!(row[k]>0)&&row.app_installs>0)?'<span class="lag">집계 중</span>':fmt(row[k]);
 function render(d){
   const upd=document.getElementById('updated');
   upd.textContent=d.updatedAt;
@@ -61,11 +65,11 @@ function render(d){
   const t=d.daily.find(r=>r.key===d.today)||{}, y=d.daily.find(r=>r.key<d.today)||{};
   document.getElementById('cards').innerHTML=COLS.map(([k,n])=>{
     const diff=(t[k]||0)-(y[k]||0), cls=diff>=0?'up':'down';
-    return `<div class="card"><div class="label">오늘 ${n}</div><div class="value">${fmt(t[k])}</div>
+    return `<div class="card"><div class="label">오늘 ${n}</div><div class="value">${cell(t,k,true)}</div>
       <div class="diff">어제 ${fmt(y[k])} · <span class="${cls}">${diff>=0?'+':''}${fmt(diff)}</span></div></div>`}).join('');
   const head=first=>`<tr><th>${first}</th>${COLS.map(c=>`<th>${c[1]}</th>`).join('')}</tr>`;
   document.getElementById('daily').innerHTML=head('날짜')+d.daily.map(r=>
-    `<tr class="${r.key===d.today?'today':''}"><td>${r.key}${r.key===d.today?' (오늘)':''}</td>${COLS.map(c=>`<td>${fmt(r[c[0]])}</td>`).join('')}</tr>`).join('');
+    `<tr class="${r.key===d.today?'today':''}"><td>${r.key}${r.key===d.today?' (오늘)':''}</td>${COLS.map(c=>`<td>${cell(r,c[0],r.key===d.today)}</td>`).join('')}</tr>`).join('');
   document.getElementById('channel').innerHTML=head('채널')+(d.channel.length?d.channel.map(r=>
     `<tr><td>${r.key}</td>${COLS.map(c=>`<td>${fmt(r[c[0]])}</td>`).join('')}</tr>`).join(''):'<tr><td colspan="8">데이터 없음</td></tr>');
 }
